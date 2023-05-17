@@ -103,15 +103,9 @@ fn case_study_imperative_style() {
     ) -> Vec<Action> {
         let mut valid_moves = Vec::new();
 
-        // Direction::ALL is a constant list of all directions a worm
-        // could walk, including diagonals.
         for dir in &Direction::ALL {
-            // 1. Target is one cell in a direction from the worm
             let target = worm.position + Direction::as_vec(dir);
-            // 2. We check that the target is free
             if !occupied_cells.contains(&target) {
-                // 3. and 4. Air cells are moved to, Dirt cells are dug,
-                // out of bounds cells do nothing.
                 match map.at(target) {
                     Some(MapCell::Air) => {
                         valid_moves.push(Action::Move(target));
@@ -124,11 +118,19 @@ fn case_study_imperative_style() {
             }
         }
 
-        // By the end of the loop, this Vec is the result I want, but
-        // you have to read through to the most nested part to see where
-        // it's being modified.
         valid_moves
     }
+
+    // Direction::ALL
+    // .iter()
+    // .map(|dir| worm.position + Direction::as_vec(dir))
+    // .filter(|target| !occupied_cells.contains(target))
+    // .filter_map(|target| match map.at(target) {
+    //     Some(MapCell::Air) => Some(Action::Move(target)),
+    //     Some(MapCell::Dirt) => Some(Action::Dig(target)),
+    //     None => None,
+    // })
+    // .collect()
 
     let map = Map {
         cells: vec![
@@ -154,30 +156,16 @@ fn case_study_transform_to_functional_style() {
         map: &Map,
         occupied_cells: HashSet<Point2d>,
     ) -> Vec<Action> {
-        let mut valid_moves = Vec::new();
-
-        // Direction::ALL is a constant list of all directions a worm
-        // could walk, including diagonals.
-        for dir in &Direction::ALL {
-            // 1. Target is one cell in a direction from the worm
-            let target = worm.position + Direction::as_vec(dir);
-            // 2. We check that the target is free
-            if !occupied_cells.contains(&target) {
-                // 3. and 4. Air cells are moved to, Dirt cells are dug,
-                // out of bounds cells do nothing.
-                match map.at(target) {
-                    Some(MapCell::Air) => {
-                        valid_moves.push(Action::Move(target));
-                    }
-                    Some(MapCell::Dirt) => {
-                        valid_moves.push(Action::Dig(target));
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        valid_moves
+        Direction::ALL
+            .iter()
+            .map(|dir| worm.position + Direction::as_vec(dir))
+            .filter(|target| !occupied_cells.contains(target))
+            .filter_map(|target| match map.at(target) {
+                Some(MapCell::Air) => Some(Action::Move(target)),
+                Some(MapCell::Dirt) => Some(Action::Dig(target)),
+                None => None,
+            })
+            .collect()
     }
 
     let map = Map {

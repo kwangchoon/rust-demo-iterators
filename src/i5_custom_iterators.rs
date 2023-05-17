@@ -17,7 +17,21 @@ mod Iterator_for_Counter {
      * Implement `Iterator` for `Counter`.
      */
 
-    #[cfg(feature = "skip")]
+    impl Iterator for Counter {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.count += 1;
+
+            if self.count < self.max {
+                Some(self.count)
+            } else {
+                None
+            }
+        }
+    }
+
+    // #[cfg(feature = "skip")]
     #[test]
     fn test1() {
         let counter = Counter::new(10);
@@ -42,8 +56,38 @@ mod IntoIterator_for_Counter {
     /*
      * Implement `IntoIterator` for `Counter`.
      */
+    impl IntoIterator for Counter {
+        type Item = i32;
+        type IntoIter = IntoIterX;
 
-    #[cfg(feature = "skip")]
+        fn into_iter(self) -> Self::IntoIter {
+            IntoIterX {
+                max: self.max,
+                count: 0,
+            }
+        }
+    }
+
+    struct IntoIterX {
+        count: i32,
+        max: i32,
+    }
+
+    impl Iterator for IntoIterX {
+        type Item = i32;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            self.count += 1;
+
+            if self.count < self.max {
+                Some(self.count)
+            } else {
+                None
+            }
+        }
+    }
+
+    // #[cfg(feature = "skip")]
     #[test]
     fn test() {
         let counter = Counter::new(10);
@@ -116,7 +160,35 @@ mod IntoIterator_for_PasswordGenerator {
      * Implement `IntoIterator` for `PasswordGenerator`.
      */
 
-    #[cfg(feature = "skip")]
+    impl IntoIterator for PasswordGenerator {
+        type Item = String;
+        type IntoIter = IntoIterX;
+
+        fn into_iter(self) -> Self::IntoIter {
+            IntoIterX {
+                length: self.length,
+            }
+        }
+    }
+
+    struct IntoIterX {
+        length: usize,
+    }
+
+    impl Iterator for IntoIterX {
+        type Item = String;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            let mut password = String::new();
+
+            for _ in 0..self.length {
+                password.push((b'a' + rand::thread_rng().gen_range(0..=b'z' - b'a')) as char);
+            }
+            Some(password)
+        }
+    }
+
+    // #[cfg(feature = "skip")]
     #[test]
     fn test() {
         let gen = PasswordGenerator::new(10);

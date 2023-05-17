@@ -17,24 +17,50 @@
 mod iterator_adapter_Map {
     // Step 1: Define a struct for the custom adapter.
 
-    /*
-     * TODO
-     */
+    // fn map<B, F>(self, f: F) -> Map<Self, F>
+    // where
+    //     Self: Sized,
+    //     F: FnMut(Self::Item) -> B,
+    // {
+    //     Map::new(self, f)
+    // }
+
+    struct Map<I, F> {
+        orig: I,
+        f: F,
+    }
 
     // Step 2: Implement `Iterator` for the custom adapter.
 
-    /*
-     * TODO
-     */
+    impl<I, F, R> Iterator for Map<I, F>
+    where
+        I: Iterator,
+        F: FnMut(I::Item) -> R,
+    {
+        type Item = R;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            match self.orig.next() {
+                Some(v) => Some((self.f)(v)),
+                None => None,
+            }
+        }
+    }
 
     // Step 3: Define a new extension trait with the new operator to be
     //         added, as a sub-trait of `Iterator`.
-
-    /*
-     * TODO
-     */
+    trait MapExt: Iterator {
+        fn fmap<F, R>(self, f: F) -> Map<Self, F>
+        where
+            F: FnMut(Self::Item) -> R,
+            Self: Sized,
+        {
+            Map { orig: self, f }
+        }
+    }
 
     // Step 4: Implement the trait for all types that implement `Iterator`.
+    impl<I: Iterator> MapExt for I {}
 
     /*
      * TODO
@@ -44,7 +70,7 @@ mod iterator_adapter_Map {
     fn test() {
         let vs = vec![1, 2, 3, 4, 5];
 
-        let result: Vec<_> = vs.into_iter().map(|x| x * 2).collect();
+        let result: Vec<_> = vs.into_iter().fmap(|x| x * 2).collect();
 
         assert_eq!(result, [2, 4, 6, 8, 10]);
     }
@@ -58,6 +84,7 @@ mod iterator_adapter_Unique {
     struct Unique<I>
     where
         I: Iterator,
+        I::Item: Hash + Eq + Clone,
     {
         orig: I,
         seen: HashSet<I::Item>,
@@ -65,24 +92,47 @@ mod iterator_adapter_Unique {
 
     // Step 2: Implement `Iterator` for the custom adapter.
 
-    /*
-     * TODO
-     */
+    impl<I> Iterator for Unique<I>
+    where
+        I: Iterator,
+        I::Item: Hash + Eq + Clone,
+    {
+        type Item = I::Item;
+
+        fn next(&mut self) -> Option<Self::Item> {
+            loop {
+                if let Some(v) = self.orig.next() {
+                    if !self.seen.contains(&v) {
+                        self.seen.insert(v.clone());
+                        return Some(v);
+                    }
+                } else {
+                    return None;
+                }
+            }
+        }
+    }
 
     // Step 3: Define a new extension trait with the new operator to be
     //         added, as a sub-trait of Iterator.
 
-    /*
-     * TODO
-     */
+    trait UniqueExt: Iterator {
+        fn unique(self) -> Unique<Self>
+        where
+            Self: Sized,
+            Self::Item: Hash + Eq + Clone,
+        {
+            Unique {
+                orig: self,
+                seen: HashSet::new(),
+            }
+        }
+    }
 
     // Step 4: Implement the trait for all types that implement `Iterator`.
+    impl<I: Iterator> UniqueExt for I {}
 
-    /*
-     * TODO
-     */
-
-    #[cfg(feature = "skip")]
+    // #[cfg(feature = "skip")]
     #[test]
     fn test() {
         let vs = vec!["a", "b", "a", "cc", "cc", "d"];
@@ -178,24 +228,36 @@ fn from_iter_demo() {
 
     // ... and make a MyCollection out of it
     let collection = MyCollection::from_iter(iter);
-
     assert_eq!(collection.0, vec![0, 1, 2, 3, 4]);
 
     // collect works too!
 
     let iter = 0..5;
-    let c: MyCollection = iter.collect();
+    let c = iter.collect::<MyCollection>();
 
     assert_eq!(c.0, vec![0, 1, 2, 3, 4]);
 }
 
 #[test]
 fn from_iter_exercise() {
+    //  [1, --]--->[2, --]---> [Nil]
+
     #[derive(Debug)]
     enum List {
         Cons(i32, Box<List>),
         Nil,
     }
+
+    impl FromIterator<i32> for List {
+        fn from_iter<T: IntoIterator<Item = i32>>(iter: T) -> Self {
+            iter.into_iter()
+                .fold(List::Nil, |acc, n| List::Cons(n, Box::new(acc)))
+        }
+    }
+    // Nil 
+    // Cons(2, Nil)
+    // Cons(4, Cons(2, Nil))
+    // Cons(6,  Cons(4, Cons(2, Nil)))
 
     /*
      * TODO: Implement `FromIterator` for `List`.
@@ -209,9 +271,9 @@ fn from_iter_exercise() {
         .collect::<Vec<_>>()
         .try_into()
         .unwrap();
-    println!("list = {:?}", list);
+    // println!("list = {:?}", list);
 
     // Having implemented `FromIterator`, we can collect into a `List`.
-    // let list: List = src.iter().map(|item: &i32| item * 2).rev().collect();
+    let list: List = src.iter().map(|item: &i32| item * 2).rev().collect();
     println!("list = {:?}", list);
 }

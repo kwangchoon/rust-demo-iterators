@@ -30,12 +30,13 @@ mod adapters {
         println!("dest_with_map = {:?}", dest_with_map);
     }
 
-    #[cfg(feature = "skip")]
+    // #[cfg(feature = "skip")]
     #[test]
     fn mapping_exercise_make_this_compile() {
         let player_scores = [("Jack", 20), ("Jane", 23), ("Jill", 18), ("John", 19)];
 
         let players = player_scores
+            .into_iter()
             .map(|(player, _score)| player)
             .collect::<Vec<_>>();
 
@@ -107,12 +108,12 @@ mod adapters {
     #[test]
     fn map_andthen_flatten_is_the_same_as_flat_map() {
         let vs = vec![1, 2, 3, 4];
-        let mapped_and_flattened: Vec<_> = vs.iter().map(|i| 0..*i).flatten().collect();
+        let vs = vec![1, 2, 3, 4];
 
+        let mapped_and_flattened: Vec<_> = vs.iter().map(|i| 0..*i).flatten().collect();
         println!("after map and flatten: {mapped_and_flattened:?}");
 
         let flat_mapped: Vec<i32> = [1, 2, 3, 4].iter().flat_map(|i| (0..*i)).collect();
-
         println!("    after flat_mapped: {flat_mapped:?}");
     }
 
@@ -181,7 +182,7 @@ mod adapters {
 
         // `filter_map` yields onfly the values for which the supplied closure returns `Some(value)`.
         let dest_with_filter_map: Vec<i32> =
-            src.iter().filter_map(|&item| item.parse().ok()).collect();
+            src.iter().filter_map(|&item| item.parse().ok()).collect(); // Ok, Err => Some(v), None
 
         println!("dest_with_ilter_map = {:?}", dest_with_filter_map);
     }
@@ -198,7 +199,7 @@ mod adapters {
     #[test]
     fn zipping() {
         let src_numbers = vec![1, 2, 3];
-        let src_words = vec!["one", "two", "three"];
+        let src_words = vec!["one", "two", "three", "four"];
 
         let mut dest = Vec::new();
         for i in 0..src_numbers.len().min(src_words.len()) {
@@ -226,15 +227,15 @@ mod adapters {
         let src1 = vec![1, 2, 3];
         let src2 = vec![4, 5, 6];
 
-        let mut dest = Vec::new();
-        // Without chain, you need this function body listed out twice.
-        for item in src1.iter() {
-            dest.push(item * 2);
-        }
-        for item in src2.iter() {
-            dest.push(item * 2);
-        }
-        println!("dest            = {:?}", dest);
+        // let mut dest = Vec::new();
+        // // Without chain, you need this function body listed out twice.
+        // for item in src1.iter() {
+        //     dest.push(item * 2);
+        // }
+        // for item in src2.iter() {
+        //     dest.push(item * 2);
+        // }
+        // println!("dest            = {:?}", dest);
 
         // This version separates the composing of the iterators from the map
         // that you wanted to do to them.
@@ -247,11 +248,12 @@ mod adapters {
         println!("dest_with_chain = {:?}", dest_with_chain);
     }
 
+    // Unfold ...
     #[test]
     fn fibonacci_numbers() {
         let fibo = std::iter::successors(Some((0, 1)), |&(a, b)| Some((b, a + b)))
             .map(|(v, _)| v)
-            .take(10);
+            .take(20);
 
         println!("fibo = {:?}", fibo.collect::<Vec<_>>());
     }
@@ -320,6 +322,7 @@ mod consumers {
         }
         println!("found           = {:?}", found);
 
+        // single-liner
         let found_with_find: Option<&i32> = src.iter().find(|&item| *item > 3);
 
         println!("found_with_find = {:?}", found_with_find);
